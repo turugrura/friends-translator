@@ -1,0 +1,350 @@
+<p-toast position="bottom-center" key="c" (onClose)="onReject()" [baseZIndex]="5000">
+  <ng-template let-message let-data pTemplate="message">
+    <div class="flex flex-column" style="flex: 1">
+      <div class="text-center">
+        <i class="pi pi-exclamation-triangle" style="font-size: 3rem"></i>
+        <h4>{{ message.summary }}</h4>
+        <!-- <div>{{data.data.fieldName}}</div> -->
+        <div>"{{ data.data.sentence }}"</div>
+        <div>"{{ data.data.th }}"</div>
+        <div>"{{ data.data.speaker }}"</div>
+      </div>
+      <div class="grid p-fluid">
+        <div class="col-6">
+          <button type="button" pButton (click)="onConfirm(data)" label="Yes" class="p-button-success"></button>
+        </div>
+        <div class="col-6">
+          <button type="button" pButton (click)="onReject()" label="No" class="p-button-secondary"></button>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</p-toast>
+<p-toast></p-toast>
+<p-blockUI [blocked]="isUpdating">
+  <div style="position: fixed; left: 50%; top: 35%; z-index: 4500">
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+</p-blockUI>
+<div class="card p-fluid">
+  <div class="flex card-container">
+    <div class="flex-grow-1">
+      <p-dropdown
+        [options]="parts"
+        [(ngModel)]="selectedPart"
+        (onChange)="onPartChange($event.value)"
+        [filter]="true"
+        filterBy="label"
+        placeholder="Select a x"
+      ></p-dropdown>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <span class="block text-600 font-medium mb-3 text-3xl">{{ selectedPart }} - {{ title }}</span>
+  <ul class="p-0 mx-0 mt-0 mb-4 list-none">
+    <li
+      class="flex align-items-center py-2 surface-border"
+      style="border-bottom-style: solid"
+      *ngFor="let sen of sentences"
+    >
+      <div *ngIf="!ripple">
+        {{ sen.id }}
+      </div>
+      <div *ngIf="sen.isChangeScene" [ngStyle]="{ backgroundColor: 'var(--primary-color)' }">
+        <span
+          class="p-tag"
+          size="xlarge"
+          [ngStyle]="{ color: 'var(--primary-color-text)' }"
+          [innerHTML]="sen.sentence | safeHtml"
+          class="text-2xl"
+        ></span>
+      </div>
+      <div *ngIf="sen.isSentence" class="flex flex-grow-1">
+        <div class="flex flex-none">
+          <p-avatar image="{{ sen.avatar }}" size="xlarge" shape="circle"></p-avatar>
+        </div>
+        <div class="flex flex-none align-items-center">
+          <p-chip
+            label="{{ sen.speaker }}"
+            class="mr-2"
+            [style]="{ 'background-color': sen.bgColor, color: sen.color, 'font-size': '1.25rem' }"
+          ></p-chip>
+        </div>
+
+        <div class="flex flex-grow-1 flex-columnx align-items-centerx justify-content-centerx">
+          <div class="flex flex-none flex-column justify-content-around">
+            <button
+              *ngIf="idOfEditingSentence !== sen.id"
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-unlock"
+              class="p-button-rounded p-button-secondary mr-2"
+              styleClass="p-button-sm"
+              (click)="idOfEditingSentence = sen.id"
+              [disabled]="isUpdating || (idOfEditingSentence !== sen.id && idOfEditingSentence != null)"
+            ></button>
+          </div>
+          <div class="flex flex-none flex-column justify-content-around">
+            <button
+              *ngIf="idOfEditingSentence !== sen.id"
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-star"
+              class="p-button-rounded p-button-secondary mr-2"
+              styleClass="p-button-sm"
+              (click)="onSaveAll(sen, senn.value, (thh.value ?? '') + 'x', speakerr.value)"
+              [disabled]="isUpdating"
+            ></button>
+          </div>
+
+          <div *ngIf="idOfEditingSentence === sen.id" class="flex flex-none flex-column justify-content-around">
+            <div class="flex">
+              <button
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-times"
+                class="p-button-rounded p-button-danger mr-2"
+                styleClass="p-button-sm"
+                (click)="
+                  cancleEditSentence(); senn.value = sen.sentence; thh.value = sen.th; speakerr.value = sen.speaker
+                "
+                [disabled]="isUpdating"
+              ></button>
+              <button
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-save"
+                class="p-button-rounded mr-2"
+                (click)="onSaveAll(sen, senn.value, thh.value, speakerr.value)"
+                [disabled]="isUpdating"
+              ></button>
+            </div>
+            <!-- <div class="flex flex-column align-items-end">
+              <button
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-save"
+                class="p-button-rounded mr-2"
+                [disabled]="isUpdating"
+                (click)="onSaveTh(sen, thh.value)"
+              ></button>
+            </div>
+            <div class="flex flex-column align-items-end">
+              <button
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-save"
+                class="p-button-rounded mr-2"
+                [disabled]="isUpdating"
+                (click)="onSaveSpeaker(sen, speakerr.value)"
+              ></button>
+            </div> -->
+          </div>
+
+          <div class="flex flex-grow-1 flex-column justify-content-center">
+            <div class="flex">
+              <textarea
+                [hidden]="idOfEditingSentence != sen.id"
+                type="text"
+                class="flex-grow-1 py-1 text-xl"
+                value="{{ sen.raw }}"
+                title="sentence"
+              ></textarea>
+            </div>
+            <div class="flex">
+              <div
+                *ngIf="idOfEditingSentence != sen.id"
+                class="text-900 text-xl"
+                [innerHTML]="sen.sentence | safeHtml"
+              ></div>
+              <textarea
+                [hidden]="idOfEditingSentence != sen.id"
+                #senn
+                type="text"
+                class="flex-grow-1 py-1 text-xl"
+                value="{{ sen.sentence }}"
+                title="sentence"
+              ></textarea>
+            </div>
+            <div class="flex">
+              <div
+                *ngIf="idOfEditingSentence != sen.id"
+                class="text-xl"
+                [innerHTML]="sen.th | safeHtml"
+                [ngStyle]="{ color: 'var(--pink-200)' }"
+              ></div>
+              <!-- <input
+                [hidden]="idOfEditingSentence != sen.id"
+                #x
+                type="text"
+                class="flex-grow-1 py-1 text-xl"
+                pInputText
+                value="{{ sen.th }}"
+              /> -->
+              <textarea
+                #thh
+                title="th"
+                [hidden]="idOfEditingSentence != sen.id"
+                type="text"
+                value="{{ sen.th }}"
+                class="flex-grow-1 py-1 text-xl"
+              ></textarea>
+            </div>
+            <div class="flex">
+              <!-- <input
+                [hidden]="idOfEditingSentence != sen.id"
+                #speakerr
+                type="text"
+                class="flex-grow-1 py-1 text-xl"
+                pInputText
+                value="{{ sen.speaker }}"
+              /> -->
+              <input
+                #speakerr
+                title="speaker"
+                [hidden]="idOfEditingSentence != sen.id"
+                type="text"
+                value="{{ sen.speaker }}"
+                class="flex-grow-1 py-1 text-xl"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-grow-1" *ngIf="!sen.isSentence && !sen.isChangeScene">
+        <div class="flex flex-none flex-column justify-content-around">
+          <button
+            *ngIf="idOfEditingSentence !== sen.id"
+            pButton
+            pRipple
+            type="button"
+            icon="pi pi-unlock"
+            class="p-button-rounded p-button-secondary mr-2"
+            styleClass="p-button-sm"
+            (click)="idOfEditingSentence = sen.id"
+            [disabled]="isUpdating || (idOfEditingSentence !== sen.id && idOfEditingSentence != null)"
+          ></button>
+        </div>
+
+        <div *ngIf="idOfEditingSentence === sen.id" class="flex flex-none flex-column justify-content-around">
+          <div class="flex">
+            <button
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-times"
+              class="p-button-rounded p-button-danger mr-2"
+              styleClass="p-button-sm"
+              (click)="
+                cancleEditSentence(); senn2.value = sen.sentence; thh2.value = sen.th; speakerr2.value = sen.speaker
+              "
+              [disabled]="isUpdating"
+            ></button>
+            <button
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-save"
+              class="p-button-rounded mr-2"
+              (click)="onSaveAll(sen, senn2.value, thh2.value, speakerr2.value)"
+              [disabled]="isUpdating"
+            ></button>
+          </div>
+        </div>
+
+        <!-- <div class="flex flex-grow-1 flex-column justify-content-center">
+          <div class="flex">
+            <textarea
+              [hidden]="idOfEditingSentence != sen.id"
+              #senn2
+              type="text"
+              class="flex-grow-1 py-1 text-xl"
+              value="{{ sen.sentence }}"
+              title="sentence"
+            ></textarea>
+          </div>
+          <div class="flex">
+            <textarea
+              #thh2
+              title="th"
+              [hidden]="idOfEditingSentence != sen.id"
+              type="text"
+              value="{{ sen.th }}"
+              class="flex-grow-1 py-1 text-xl"
+            ></textarea>
+          </div>
+          <div class="flex">
+            <input
+              #speakerr2
+              title="speaker"
+              [hidden]="idOfEditingSentence != sen.id"
+              type="text"
+              value="{{ sen.speaker }}"
+              class="flex-grow-1 py-1 text-xl"
+            />
+          </div>
+        </div> -->
+
+        <div class="flex flex-grow-1 flex-column justify-content-around">
+          <div class="flex">
+            <textarea
+              [hidden]="idOfEditingSentence != sen.id"
+              type="text"
+              class="flex-grow-1 py-1 text-xl"
+              value="{{ sen.raw }}"
+              title="sentence"
+            ></textarea>
+          </div>
+          <div class="flex">
+            <textarea
+              [hidden]="idOfEditingSentence != sen.id"
+              #senn2
+              type="text"
+              class="flex-grow-1 py-1 text-xl"
+              value="{{ sen.sentence }}"
+              title="sentence"
+            ></textarea>
+          </div>
+          <div class="flex">
+            <textarea
+              #thh2
+              title="th"
+              [hidden]="idOfEditingSentence != sen.id"
+              type="text"
+              value="{{ sen.th }}"
+              class="flex-grow-1 py-1 text-xl"
+            ></textarea>
+          </div>
+          <div class="flex">
+            <input
+              #speakerr2
+              title="speaker"
+              [hidden]="idOfEditingSentence != sen.id"
+              type="text"
+              value="{{ sen.speaker }}"
+              class="flex-grow-1 py-1 text-xl"
+            />
+          </div>
+          <div class="flex flex-grow-1">
+            <!-- <textarea
+              #xx1
+              pInputTextarea
+              [hidden]="idOfEditingSentence != sen.id"
+              value="{{ sen.sentence }}"
+              style="width: -webkit-fill-available"
+            ></textarea> -->
+            <div *ngIf="idOfEditingSentence != sen.id" class="text-xl" [innerHTML]="sen.sentence | safeHtml"></div>
+          </div>
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>
