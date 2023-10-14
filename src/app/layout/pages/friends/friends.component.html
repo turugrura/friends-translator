@@ -48,7 +48,7 @@
       style="border-bottom-style: solid"
       *ngFor="let sen of sentences"
     >
-      <div *ngIf="!ripple">
+      <div *ngIf="ripple">
         {{ sen.id }}
       </div>
       <div *ngIf="sen.isChangeScene" [ngStyle]="{ backgroundColor: 'var(--primary-color)' }">

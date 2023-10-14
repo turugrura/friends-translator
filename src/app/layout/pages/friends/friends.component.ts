@@ -98,7 +98,6 @@ export class FriendsComponent implements OnInit, OnDestroy {
     return this.friendsService.getAllEpisode().pipe(
       take(1),
       tap((parts) => {
-        console.log({ parts });
         this.parts = parts
           .sort((a, b) => {
             const aa = a.season * 1000 + a.episode;
