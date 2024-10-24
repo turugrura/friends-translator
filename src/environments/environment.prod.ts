@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  friendUrl: 'false',
+  friendUrl: 'https://prod---ro-backend-7a7aw5iyva-as.a.run.app',
 };
