@@ -1,6 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, forkJoin, map, Observable, of, ReplaySubject, tap } from 'rxjs';
+import { environment } from 'src/environments/environment';
+import { BaseAPIService } from './base-api.service';
+import { JwtHelperService } from '@auth0/angular-jwt';
 
 export interface SentenceModel {
   raw: string;
@@ -146,14 +149,14 @@ const partNames = [
 ];
 
 @Injectable()
-export class FriendsService {
-  private loadDataSuccessed = new ReplaySubject(1);
+export class FriendsService extends BaseAPIService {
+  private loadDataSucceeded = new ReplaySubject(1);
   private episodes: Omit<FriendModel, 'sentences'>[] = [];
   private cached: { [key: string]: FriendModel } = {};
-  private baseUrl = localStorage.getItem('friendsAPI');
 
-  constructor(private http: HttpClient) {
+  constructor(protected readonly http: HttpClient, protected readonly jwtHelper: JwtHelperService) {
     // this.loadData();
+    super()
   }
 
   private loadData() {
@@ -186,7 +189,7 @@ export class FriendsService {
       });
       // this.parts = p;
 
-      this.loadDataSuccessed.next(1);
+      this.loadDataSucceeded.next(1);
     });
   }
 
@@ -195,8 +198,8 @@ export class FriendsService {
       return of(this.episodes);
     }
 
-    return this.http.get(`${this.baseUrl}/friend_translators`).pipe(
-      map((d) => d['data'] as Omit<FriendModel, 'sentences'>[]),
+    return this.get(`${this.API.friends}`).pipe(
+      // map((d) => d['data'] as Omit<FriendModel, 'sentences'>[]),
       tap((data) => {
         this.episodes = data;
       }),
@@ -210,8 +213,8 @@ export class FriendsService {
       return of(cachedVal);
     }
 
-    return this.http.get<FriendModel>(`${this.baseUrl}/friend_translators/${season}/${episode}`).pipe(
-      map((d) => d['data'] as FriendModel),
+    return this.get<FriendModel>(`${this.API.friends}/${season}/${episode}`).pipe(
+      // map((d) => d['data'] as FriendModel),
       tap((data) => {
         this.cached[cacheKey] = data;
       }),
@@ -222,6 +225,6 @@ export class FriendsService {
     const cacheKey = `${data.season}_${data.episode}`;
     this.cached[cacheKey] = undefined;
 
-    return this.http.post(`${this.baseUrl}/friend_translators/sentences`, data);
+    return this.post(`${this.API.friends}/${data.season}/${data.episode}`, data);
   }
 }
